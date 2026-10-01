@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+  <menulist>
+    <menuitem menuid="issabel_ai_assistant" desc="Asistente IA" parent="pbxconfig" module="yes" link="" order="90">
+      <permissions>
+        <group id="1" name="administrator" desc="total access"></group>
+      </permissions>
+    </menuitem>
+  </menulist>
+</module>

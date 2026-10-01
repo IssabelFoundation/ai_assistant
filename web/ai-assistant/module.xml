@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+  <name>issabel_ai_assistant</name>
+  <title>Asistente IA</title>
+  <description>Asistente BYOK con planes de cambios sujetos a aprobación humana.</description>
+  <version>0.1.0</version>
+  <menu parent="pbxconfig" order="90" link="index.php?menu=issabel_ai_assistant" />
+  <acl>
+    <permission>assistant.access</permission>
+    <permission>assistant.provider.configure</permission>
+    <permission>assistant.extensions.read</permission>
+    <permission>assistant.plans.create</permission>
+    <permission>assistant.queues.read</permission>
+    <permission>assistant.queues.plan</permission>
+    <permission>assistant.namespace.read</permission>
+    <permission>assistant.ringgroups.read</permission>
+    <permission>assistant.ringgroups.plan</permission>
+    <permission>assistant.time.read</permission>
+    <permission>assistant.time.plan</permission>
+    <permission>assistant.ivr.read</permission>
+    <permission>assistant.ivr.plan</permission>
+    <permission>assistant.plans.approve</permission>
+    <permission>assistant.audit.read</permission>
+  </acl>
+</module>

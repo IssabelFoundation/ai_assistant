@@ -1,0 +1,8 @@
+assistant_title="AI Assistant"
+provider_settings="Provider and model"
+pending_plans="Pending plans"
+review="Review"
+approve_execute="Approve and execute"
+cancel="Cancel"
+history="Local history (30 days)"
+privacy_notice="Your messages and the PBX data needed to answer will be sent to your selected provider. Keys remain encrypted locally."

@@ -1,0 +1,106 @@
+.issabel-ai {
+  /* Issabel admin palette, taken from the values mainstyle.css uses in the
+     admin UI: navbar #562d7b, interaction #4b0884, links and headings #4d0066,
+     selected controls #a992dc, striped rows #eee6ff, light surfaces #f4ecfc. */
+  --ai-purple: #562d7b;
+  --ai-purple-strong: #4b0884;
+  --ai-purple-deep: #4d0066;
+  --ai-purple-soft: #a992dc;
+  --ai-purple-tint: #eee6ff;
+  --ai-purple-mist: #f4ecfc;
+  --ai-line: #e4daf3;
+  --ai-line-strong: #cbbfe0;
+  --ai-text: #332b3d;
+  --ai-muted: #6b6377;
+  --ai-red: #a43838;
+  --ai-red-tint: #f7e2e6;
+  --ai-system-bg: #f4f4f6;
+  --ai-system-line: #8a8694;
+  --ai-system-text: #4a4653;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 14px 28px;
+  color: var(--ai-text);
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.issabel-ai *, .issabel-ai *::before, .issabel-ai *::after { box-sizing: border-box; }
+.issabel-ai .ai-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
+.issabel-ai h1 { margin: 0; color: var(--ai-purple-deep); font-size: 28px; line-height: 1.2; }
+.issabel-ai h2 { margin: 0 0 14px; color: var(--ai-purple-deep); font-size: 22px; }
+.issabel-ai .ai-eyebrow { color: var(--ai-purple); font-size: 11px; font-weight: 800; letter-spacing: .18em; }
+.issabel-ai .ai-notice, .issabel-ai .ai-panel, .issabel-ai .ai-messages, .issabel-ai .ai-chat-form { background: #fff; border: 1px solid var(--ai-line); border-radius: 10px; }
+.issabel-ai .ai-notice { margin: 12px 0 0; padding: 11px 14px; color: var(--ai-muted); }
+.issabel-ai .ai-panel { margin: 14px 0; padding: 18px; }
+.issabel-ai .ai-hidden { display: none !important; }
+.issabel-ai .ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+.issabel-ai .ai-grid > label { min-width: 0; width: auto; }
+.issabel-ai label { display: block; margin: 0; color: var(--ai-muted); font-weight: 650; }
+/* Keep theme control sizing from adding padding outside the grid column. */
+.issabel-ai input, .issabel-ai select, .issabel-ai textarea { box-sizing: border-box; min-width: 0; max-width: 100%; display: block; width: 100%; height: auto; margin: 5px 0 0; border: 1px solid var(--ai-line-strong); border-radius: 7px; padding: 9px 10px; background: #fff; color: var(--ai-text); font: inherit; box-shadow: none; }
+.issabel-ai input:focus, .issabel-ai select:focus, .issabel-ai textarea:focus { outline: 2px solid var(--ai-purple-soft); outline-offset: 1px; border-color: var(--ai-purple-soft); }
+.issabel-ai button { width: auto; height: auto; margin: 0; border: 0; border-radius: 7px; padding: 9px 14px; background: var(--ai-purple); color: #fff; font: inherit; font-weight: 700; line-height: 1.3; cursor: pointer; box-shadow: none; }
+.issabel-ai button:disabled { cursor: default; opacity: .6; }
+.issabel-ai button:not(:disabled):hover { background: var(--ai-purple-strong); }
+.issabel-ai button.ai-secondary { background: var(--ai-purple-tint); color: var(--ai-purple-deep); }
+.issabel-ai button.ai-secondary:not(:disabled):hover { background: #e2d5f7; }
+.issabel-ai button.ai-danger { background: var(--ai-red-tint); color: var(--ai-red); }
+.issabel-ai button.ai-danger:not(:disabled):hover { background: #f0ccd3; }
+.issabel-ai button.ai-link { padding: 0; background: transparent; color: var(--ai-purple); }
+.issabel-ai button.ai-link:not(:disabled):hover { background: transparent; color: var(--ai-purple-strong); text-decoration: underline; }
+.issabel-ai .ai-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+.issabel-ai .ai-header .ai-actions { margin-top: 0; }
+.issabel-ai .ai-messages { min-height: 280px; max-height: 52vh; margin-top: 14px; padding: 16px; overflow: auto; }
+.issabel-ai .ai-messages article { max-width: 78%; margin: 7px 0; border-radius: 11px; padding: 10px 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.issabel-ai .ai-messages .assistant { background: var(--ai-purple-mist); color: var(--ai-text); }
+.issabel-ai .ai-messages .user { margin-left: auto; background: var(--ai-purple); color: #fff; }
+.issabel-ai .ai-plan { margin: 13px 0; border: 2px solid var(--ai-line-strong); border-radius: 10px; padding: 15px; background: #fff; }
+.issabel-ai .ai-plan h3 { margin: 0 0 8px; color: var(--ai-purple-deep); }
+.issabel-ai .ai-plan dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 0; }
+.issabel-ai .ai-plan dt { font-weight: 700; }
+.issabel-ai .ai-plan dd { margin: 0; overflow-wrap: anywhere; }
+.issabel-ai .ai-chat-form { display: flex; gap: 11px; margin-top: 14px; padding: 11px; }
+.issabel-ai .ai-chat-form textarea { min-height: 72px; margin: 0; resize: vertical; }
+.issabel-ai .ai-chat-form button { align-self: flex-end; }
+.issabel-ai .ai-footer { display: flex; justify-content: space-between; padding: 11px 4px; }
+@media (max-width: 700px) {
+  .issabel-ai .ai-grid { grid-template-columns: 1fr; }
+  .issabel-ai .ai-header { align-items: flex-start; flex-direction: column; }
+  .issabel-ai .ai-messages article { max-width: 92%; }
+  .issabel-ai .ai-chat-form { flex-direction: column; }
+  .issabel-ai .ai-chat-form button { align-self: stretch; }
+}
+
+/* Markdown in assistant messages; user messages retain their original whitespace. */
+.issabel-ai .ai-messages article.assistant { white-space: normal; }
+.issabel-ai .ai-messages .assistant p { margin: 0 0 8px; }
+.issabel-ai .ai-messages .assistant ul, .issabel-ai .ai-messages .assistant ol { margin: 8px 0; padding-left: 24px; }
+.issabel-ai .ai-messages .assistant ul { list-style: disc outside; }
+.issabel-ai .ai-messages .assistant ol { list-style: decimal outside; }
+.issabel-ai .ai-messages .assistant li { display: list-item; margin: 3px 0; }
+.issabel-ai .ai-messages .assistant strong { font-weight: 700; }
+.issabel-ai .ai-messages .assistant em { font-style: italic; }
+.issabel-ai .ai-messages .assistant code { font-family: monospace; background: var(--ai-purple-tint); border-radius: 3px; padding: 1px 4px; }
+.issabel-ai .ai-messages .assistant pre { max-width: 100%; overflow-x: auto; white-space: pre; margin: 8px 0; padding: 10px; background: var(--ai-purple-tint); border-radius: 6px; }
+.issabel-ai .ai-messages .assistant pre code { padding: 0; }
+.issabel-ai .ai-messages .assistant > :last-child { margin-bottom: 0; }
+
+.issabel-ai .ai-messages .assistant .ai-table-scroll { max-width: 100%; overflow-x: auto; margin: 10px 0; border: 1px solid var(--ai-line-strong); border-radius: 6px; }
+.issabel-ai .ai-messages .assistant .ai-table-scroll:focus { outline: 2px solid var(--ai-purple); outline-offset: 2px; }
+.issabel-ai .ai-messages .assistant table { width: 100%; margin: 0; border-collapse: collapse; font: inherit; color: inherit; background: #fff; }
+.issabel-ai .ai-messages .assistant th, .issabel-ai .ai-messages .assistant td { padding: 8px 12px; border: 1px solid var(--ai-line); vertical-align: top; min-width: 90px; }
+.issabel-ai .ai-messages .assistant th { background: var(--ai-purple-tint); color: var(--ai-purple-deep); font-weight: 700; }
+.issabel-ai .ai-messages .assistant tbody tr:nth-child(even) { background: var(--ai-purple-mist); }
+
+.issabel-ai .ai-messages article.ai-system { background: var(--ai-system-bg); border-left: 3px solid var(--ai-system-line); color: var(--ai-system-text); font-size: 13px; white-space: normal; }
+.issabel-ai .ai-messages .ai-system p { margin: 0; }
+
+.issabel-ai .ai-dialog { box-sizing: border-box; position: fixed; inset: 0; width: min(900px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100vh - 40px); margin: auto; padding: 22px; overflow: auto; border: 1px solid var(--ai-line); border-radius: 12px; background: #fff; color: var(--ai-text); box-shadow: 0 18px 60px #0004; font: inherit; }
+.issabel-ai .ai-dialog::backdrop { background: rgba(29, 16, 41, .55); }
+.issabel-ai .ai-dialog h2 { overflow-wrap: anywhere; }
+.issabel-ai .ai-dialog .ai-dialog-content { margin: 0 0 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.issabel-ai .ai-dialog pre.ai-dialog-content { max-height: 55vh; overflow: auto; padding: 14px; border: 1px solid var(--ai-line); border-radius: 7px; background: var(--ai-purple-mist); color: var(--ai-text); font: 13px/1.5 monospace; user-select: text; }
+.issabel-ai .ai-dialog .ai-dialog-status { margin: 8px 0; color: var(--ai-muted); }
+.issabel-ai .ai-dialog .ai-actions { justify-content: flex-end; }
+.issabel-ai .ai-dialog button:focus-visible { outline: 2px solid var(--ai-purple-deep); outline-offset: 3px; }

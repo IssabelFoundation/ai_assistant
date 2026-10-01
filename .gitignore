@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+._*
+
+# Editores
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Go (mcp/)
+mcp/issabel-mcp
+mcp/cmd/issabel-mcp/issabel-mcp
+*.test
+*.out
+mcp/vendor/
+
+# Empaquetado RPM
+*.rpm
+*.tgz
+*.tar.gz
+packaging/BUILD/
+packaging/BUILDROOT/
+packaging/RPMS/
+packaging/SRPMS/
+packaging/SOURCES/
+packaging/SPECS/
+rpmbuild/
+
+# Logs y temporales
+*.log
+*.bak
+*.orig
+*.tmp
+
+# Configuración local con credenciales (por si aparece)
+config.local.php
+*.local.php
+.env

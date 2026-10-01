@@ -1,0 +1,8 @@
+assistant_title="Asistente IA"
+provider_settings="Proveedor y modelo"
+pending_plans="Planes pendientes"
+review="Revisar"
+approve_execute="Aprobar y ejecutar"
+cancel="Cancelar"
+history="Historial local (30 días)"
+privacy_notice="Tus mensajes y los datos de PBX necesarios para responder se enviarán al proveedor que configures. Las claves quedan cifradas localmente."
