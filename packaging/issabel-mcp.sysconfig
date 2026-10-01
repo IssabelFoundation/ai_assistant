@@ -1,0 +1,10 @@
+ISSABEL_MCP_LISTEN=127.0.0.1:8787
+ISSABEL_PBXAPI_URL=https://127.0.0.1/pbxapi
+# Issabel commonly uses a certificate that does not contain the loopback IP.
+# This relaxation is rejected by the daemon for every non-loopback URL.
+ISSABEL_PBXAPI_TLS_INSECURE=true
+# Preferred alternative when the URL hostname matches the certificate:
+# ISSABEL_PBXAPI_CA_FILE=/etc/pki/ca-trust/source/anchors/issabel-local-ca.pem
+ISSABEL_MCP_HISTORY_DAYS=30
+ISSABEL_MCP_HTTP_TIMEOUT_SECONDS=45
+ISSABEL_MCP_MAX_BODY_BYTES=1048576

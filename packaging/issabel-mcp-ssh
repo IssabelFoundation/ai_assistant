@@ -1,0 +1,3 @@
+#!/bin/sh
+# Forced SSH command: never execute SSH_ORIGINAL_COMMAND or caller arguments.
+exec /usr/bin/sudo -n -u issabel-mcp /usr/sbin/issabel-mcp -mode stdio -user external-mcp

@@ -1,0 +1,76 @@
+name: RPM Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container: rockylinux:8
+    defaults:
+      run:
+        shell: bash
+    env:
+      RPMBUILD_TOPDIR: ${{ github.workspace }}/rpmbuild
+      CGO_ENABLED: '0'
+    steps:
+      - name: Install build dependencies
+        run: dnf install -y git rpm-build golang systemd-rpm-macros tar gzip diffutils findutils
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Test MCP
+        working-directory: mcp
+        run: go test ./...
+
+      - name: Build MCP RPM (includes compiled Go server)
+        run: bash packaging/build-issabel-mcp-rpm.sh
+
+      - name: Build Issabel module RPM
+        run: bash packaging/build-issabel-ai-assistant-rpm.sh
+
+      - name: Inspect packages
+        run: |
+          rpm -qpl "$RPMBUILD_TOPDIR"/RPMS/x86_64/issabel-mcp-*.rpm
+          rpm -qpl "$RPMBUILD_TOPDIR"/RPMS/noarch/issabel-ai-assistant-*.rpm
+
+      - name: Upload MCP RPM
+        uses: actions/upload-artifact@v7
+        with:
+          name: issabel-mcp-el8-x86_64
+          path: rpmbuild/RPMS/x86_64/issabel-mcp-*.rpm
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Upload Issabel module RPM
+        uses: actions/upload-artifact@v7
+        with:
+          name: issabel-ai-assistant-el8-noarch
+          path: rpmbuild/RPMS/noarch/issabel-ai-assistant-*.rpm
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Publish RPMs via SSH
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: asternic/scp-action@master
+        with:
+          host: ${{ secrets.REPOHOST }}
+          username: ${{ secrets.REPOUSER }}
+          port: ${{ secrets.REPOPORT }}
+          key: ${{ secrets.BUILDKEY }}
+          source: "rpmbuild/RPMS/x86_64/issabel-mcp-*.rpm,rpmbuild/RPMS/noarch/issabel-ai-assistant-*.rpm"
+          target: "rpm"
+          # Remove rpmbuild/RPMS/<arch>/ so both RPMs land directly in rpm/.
+          strip_components: 3

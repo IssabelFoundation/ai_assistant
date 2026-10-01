@@ -1,0 +1,1 @@
+issabel-mcp-remote ALL=(issabel-mcp) NOPASSWD: /usr/sbin/issabel-mcp -mode stdio -user external-mcp
