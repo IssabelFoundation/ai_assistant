@@ -19,7 +19,8 @@ create plans and cannot approve or execute PBX changes.
 
 %build
 cd mcp
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -B gobuildid" -o ../issabel-mcp ./cmd/issabel-mcp
+# RPM sources are built from a tarball, without repository metadata.
+CGO_ENABLED=0 go build -buildvcs=false -trimpath -ldflags "-s -w -B gobuildid" -o ../issabel-mcp ./cmd/issabel-mcp
 
 %install
 install -Dpm0755 issabel-mcp %{buildroot}%{_sbindir}/issabel-mcp
