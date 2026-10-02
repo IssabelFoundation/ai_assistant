@@ -9,6 +9,8 @@ URL:            https://www.issabel.org
 Source0:        %{name}-%{version}.tar.gz
 BuildRequires:  golang >= 1.20
 Requires:       openssl, systemd
+Requires(pre):  shadow-utils
+Requires(post): openssl, coreutils
 
 %description
 Local MCP stdio server and same-origin AI provider gateway. Mutation tools only
@@ -32,19 +34,31 @@ install -d -m0750 %{buildroot}%{_sysconfdir}/issabel-mcp
 install -d -m0700 %{buildroot}%{_localstatedir}/lib/issabel-mcp
 
 %pre
-getent group issabel-ai >/dev/null || groupadd -r issabel-ai
-getent passwd issabel-mcp >/dev/null || useradd -r -g issabel-ai -d /var/lib/issabel-mcp -s /sbin/nologin issabel-mcp
+getent group issabel-ai >/dev/null || groupadd -r issabel-ai || exit 1
+getent passwd issabel-mcp >/dev/null || useradd -r -g issabel-ai -d /var/lib/issabel-mcp -s /sbin/nologin issabel-mcp || exit 1
 exit 0
 
 %post
+set -e
+# Secrets must be private from creation, including during failed installs.
+umask 0077
 install -d -m0750 -o issabel-mcp -g issabel-ai /etc/issabel-mcp
 install -d -m0700 -o issabel-mcp -g issabel-ai /var/lib/issabel-mcp
+key_tmp=$(mktemp /etc/issabel-mcp/.key.XXXXXX)
+trap 'rm -f "$key_tmp"' EXIT
 if [ ! -s /etc/issabel-mcp/private.pem ]; then
-  openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out /etc/issabel-mcp/private.pem
-  openssl pkey -in /etc/issabel-mcp/private.pem -pubout -out /etc/issabel-mcp/public.pem
+  openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out "$key_tmp"
+  install -m0600 -o issabel-mcp -g issabel-ai "$key_tmp" /etc/issabel-mcp/private.pem
 fi
-[ -s /etc/issabel-mcp/master.key ] || openssl rand -base64 32 > /etc/issabel-mcp/master.key
-[ -s /etc/issabel-mcp/web.secret ] || openssl rand -base64 32 > /etc/issabel-mcp/web.secret
+# Recover a missing public key without rotating the existing private key.
+openssl pkey -in /etc/issabel-mcp/private.pem -pubout -out "$key_tmp"
+install -m0644 -o root -g issabel-ai "$key_tmp" /etc/issabel-mcp/public.pem
+for secret in master.key web.secret; do
+  if [ ! -s "/etc/issabel-mcp/$secret" ]; then
+    openssl rand -base64 32 > "$key_tmp"
+    install -m0600 -o issabel-mcp -g issabel-ai "$key_tmp" "/etc/issabel-mcp/$secret"
+  fi
+done
 chown issabel-mcp:issabel-ai /etc/issabel-mcp/private.pem /etc/issabel-mcp/master.key /etc/issabel-mcp/web.secret
 chmod 0600 /etc/issabel-mcp/private.pem /etc/issabel-mcp/master.key
 chmod 0640 /etc/issabel-mcp/web.secret

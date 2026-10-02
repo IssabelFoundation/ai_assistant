@@ -8,6 +8,7 @@ Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
 Requires:       issabel-mcp = %{version}
 Requires:       php, php-curl, php-pdo, shadow-utils
+Requires(post): issabel-mcp = %{version}, issabel-framework, shadow-utils, php-cli, systemd
 
 %description
 Same-origin Issabel chat, per-user BYOK configuration, conversation history,
