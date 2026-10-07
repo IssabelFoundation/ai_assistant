@@ -55,6 +55,21 @@ func TestProviderKeyIsEncryptedAndIsolated(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if view.BaseURL != "" {
+		t.Fatal("legacy configuration acquired a base URL")
+	}
+	pc := providerConfig{Provider: "openai_compatible", BaseURL: "https://openrouter.ai/api/v1", Model: "vendor/model", APIKey: secret}
+	if err := s.saveProvider("alice", pc); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := s.loadProvider("alice")
+	if err != nil || loaded.BaseURL != pc.BaseURL || loaded.APIKey != secret {
+		t.Fatal("compatible configuration did not round trip")
+	}
+	view, err = s.providerView("alice")
+	if err != nil || view.BaseURL != pc.BaseURL || strings.Contains(mustJSON(view), secret) {
+		t.Fatal("incorrect compatible view")
+	}
 	if !view.HasKey || view.KeySuffix != "text" {
 		t.Fatalf("unexpected masked view: %#v", view)
 	}

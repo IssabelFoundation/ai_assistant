@@ -2,7 +2,7 @@
 
 Name:           issabel-mcp
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Restricted MCP and BYOK service for Issabel
 License:        GPLv3+
 URL:            https://www.issabel.org

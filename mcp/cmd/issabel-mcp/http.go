@@ -157,7 +157,18 @@ func (a *apiServer) provider(w http.ResponseWriter, r *http.Request) {
 		if !decodeJSON(w, r, &input) {
 			return
 		}
-		if _, err := providerFor(input.Provider, a.client); err != nil {
+		input.Model = strings.TrimSpace(input.Model)
+		if input.Provider == "openai_compatible" {
+			var err error
+			input.BaseURL, err = normalizeBaseURL(input.BaseURL)
+			if err != nil {
+				writeError(w, 422, err.Error())
+				return
+			}
+		} else {
+			input.BaseURL = ""
+		}
+		if _, err := providerFor(input, a.client); err != nil {
 			writeError(w, 422, err.Error())
 			return
 		}
@@ -169,6 +180,7 @@ func (a *apiServer) provider(w http.ResponseWriter, r *http.Request) {
 			writeError(w, 500, "configuration could not be saved")
 			return
 		}
+		a.invalidateModels(user)
 		view, _ := a.store.providerView(user)
 		writeJSON(w, 200, view)
 	case http.MethodDelete:
@@ -176,6 +188,7 @@ func (a *apiServer) provider(w http.ResponseWriter, r *http.Request) {
 			writeError(w, 500, "configuration could not be deleted")
 			return
 		}
+		a.invalidateModels(user)
 		w.WriteHeader(204)
 	default:
 		writeError(w, 405, "method not allowed")
@@ -194,9 +207,21 @@ func (a *apiServer) testProvider(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 409, "configure a provider first")
 		return
 	}
-	p, _ := providerFor(pc.Provider, a.client)
+	p, err := providerFor(pc, a.client)
+	if err != nil {
+		writeError(w, 422, err.Error())
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), a.cfg.HTTPTimeout)
 	defer cancel()
+	if compatible, ok := p.(*compatibleProvider); ok {
+		if err := compatible.Test(ctx, pc.APIKey, pc.Model); err != nil {
+			writeError(w, 502, err.Error())
+			return
+		}
+		writeJSON(w, 200, map[string]interface{}{"status": "ok", "model": pc.Model})
+		return
+	}
 	models, err := p.Models(ctx, pc.APIKey)
 	if err != nil {
 		writeError(w, 502, err.Error())
@@ -218,7 +243,8 @@ func (a *apiServer) models(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 409, "configure a provider first")
 		return
 	}
-	cacheKey := user + ":" + pc.Provider + ":" + strconv.FormatInt(pc.UpdatedAt, 10)
+	fingerprint := sha256.Sum256([]byte(mustJSON(pc)))
+	cacheKey := user + ":" + hex.EncodeToString(fingerprint[:])
 	a.cacheMu.Lock()
 	cached, ok := a.modelCache[cacheKey]
 	a.cacheMu.Unlock()
@@ -226,7 +252,11 @@ func (a *apiServer) models(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, map[string]interface{}{"models": cached.Values})
 		return
 	}
-	p, _ := providerFor(pc.Provider, a.client)
+	p, err := providerFor(pc, a.client)
+	if err != nil {
+		writeError(w, 422, err.Error())
+		return
+	}
 	models, err := p.Models(r.Context(), pc.APIKey)
 	if err != nil {
 		writeError(w, 502, err.Error())
@@ -344,7 +374,11 @@ func (a *apiServer) chat(w http.ResponseWriter, r *http.Request, stream bool) {
 		writeError(w, 409, "configure a provider first")
 		return
 	}
-	p, _ := providerFor(pc.Provider, a.client)
+	p, err := providerFor(pc, a.client)
+	if err != nil {
+		writeError(w, 422, err.Error())
+		return
+	}
 	if stream {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-store")
@@ -460,4 +494,14 @@ func textChunks(value string, size int) []string {
 		result = append(result, string(runes[start:end]))
 	}
 	return result
+}
+
+func (a *apiServer) invalidateModels(user string) {
+	a.cacheMu.Lock()
+	defer a.cacheMu.Unlock()
+	for key := range a.modelCache {
+		if strings.HasPrefix(key, user+":") {
+			delete(a.modelCache, key)
+		}
+	}
 }

@@ -20,6 +20,7 @@ import (
 
 type providerConfig struct {
 	Provider  string `json:"provider"`
+	BaseURL   string `json:"base_url,omitempty"`
 	Model     string `json:"model"`
 	APIKey    string `json:"api_key"`
 	UpdatedAt int64  `json:"updated_at"`
@@ -27,6 +28,7 @@ type providerConfig struct {
 
 type providerView struct {
 	Provider  string `json:"provider"`
+	BaseURL   string `json:"base_url,omitempty"`
 	Model     string `json:"model"`
 	HasKey    bool   `json:"has_key"`
 	KeySuffix string `json:"key_suffix,omitempty"`
@@ -163,7 +165,7 @@ func (s *store) providerView(user string) (providerView, error) {
 	if len(suffix) > 4 {
 		suffix = suffix[len(suffix)-4:]
 	}
-	return providerView{Provider: pc.Provider, Model: pc.Model, HasKey: pc.APIKey != "", KeySuffix: suffix, UpdatedAt: pc.UpdatedAt}, nil
+	return providerView{Provider: pc.Provider, BaseURL: pc.BaseURL, Model: pc.Model, HasKey: pc.APIKey != "", KeySuffix: suffix, UpdatedAt: pc.UpdatedAt}, nil
 }
 
 func (s *store) deleteProvider(user string) error {

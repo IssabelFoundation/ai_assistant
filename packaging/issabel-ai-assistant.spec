@@ -1,6 +1,6 @@
 Name:           issabel-ai-assistant
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Issabel web interface for the AI assistant
 License:        GPLv3+
 URL:            https://www.issabel.org

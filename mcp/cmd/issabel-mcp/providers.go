@@ -38,8 +38,10 @@ type toolResult struct {
 	ProviderResponseID string
 }
 
-func providerFor(name string, client *http.Client) (provider, error) {
-	switch name {
+func providerFor(pc providerConfig, client *http.Client) (provider, error) {
+	switch pc.Provider {
+	case "openai_compatible":
+		return newCompatibleProvider(pc.BaseURL, client)
 	case "openai":
 		return &openAIProvider{client: client}, nil
 	case "anthropic":
@@ -47,7 +49,7 @@ func providerFor(name string, client *http.Client) (provider, error) {
 	case "gemini":
 		return &geminiProvider{client: client}, nil
 	default:
-		return nil, errors.New("provider must be openai, anthropic, or gemini")
+		return nil, errors.New("provider must be openai, anthropic, gemini, or openai_compatible")
 	}
 }
 
