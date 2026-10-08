@@ -96,11 +96,11 @@ func toolDefinitions() []map[string]interface{} {
 	}
 	selectorProperty := map[string]interface{}{"selector": extensionSelector}
 	createProps := cloneSchema(selectorProperty)
-	createProps["profile"] = map[string]interface{}{"type": "string", "enum": []string{"sip", "pjsip", "pjsip_webrtc"}}
+	createProps["profile"] = map[string]interface{}{"type": "string", "enum": []string{"sip", "pjsip", "pjsip_webrtc"}, "description": "Extension profile. Default codecs: pjsip_webrtc uses opus only; sip and pjsip use ulaw and alaw."}
 	createProps["name_pattern"] = map[string]string{"type": "string"}
 	createProps["voicemail"] = map[string]interface{}{"type": "object", "required": []string{"enabled"}, "properties": map[string]interface{}{"enabled": map[string]string{"type": "boolean"}, "pin_mode": map[string]interface{}{"type": "string", "enum": []string{"generate", "provided_at_execution"}}}}
 	createProps["credentials"] = map[string]interface{}{"type": "object", "properties": map[string]interface{}{"password_mode": map[string]interface{}{"type": "string", "enum": []string{"generate", "provided_at_execution"}}}}
-	createProps["codecs"] = map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string", "enum": []string{"ulaw", "alaw", "opus", "g722", "gsm"}}}
+	createProps["codecs"] = map[string]interface{}{"type": "array", "description": "When creating with default codecs, send [\"opus\"] for pjsip_webrtc and [\"ulaw\",\"alaw\"] for sip or pjsip. On update, omit codecs unless a codec change was requested; omission preserves existing codecs.", "items": map[string]interface{}{"type": "string", "enum": []string{"ulaw", "alaw", "opus", "g722", "gsm"}}}
 	createProps["context"] = map[string]interface{}{"type": "string", "enum": []string{"from-internal"}}
 	updateChanges := map[string]interface{}{"type": "object", "additionalProperties": false, "properties": map[string]interface{}{
 		"name":        map[string]string{"type": "string"},
@@ -142,13 +142,13 @@ func toolDefinitions() []map[string]interface{} {
 		"return_to_ivr": map[string]interface{}{"type": "boolean", "description": "Return to the parent IVR after the destination finishes. Defaults to true."},
 	}}
 	ivrProps := map[string]interface{}{
-		"name":                 map[string]interface{}{"type": "string", "minLength": 1, "maxLength": 80},
-		"description":          map[string]interface{}{"type": "string", "maxLength": 150},
-		"announcement":         map[string]interface{}{"type": "integer", "minimum": 0, "description": "Recording id used as the greeting."},
-		"timeout_seconds":      map[string]interface{}{"type": "integer", "minimum": 1, "maximum": 300, "description": "Seconds to wait for a key. Defaults to 10."},
-		"timeout_destination":  failoverProperty,
-		"invalid_destination":  failoverProperty,
-		"entries":              map[string]interface{}{"type": "array", "maxItems": 10, "items": ivrEntry, "description": "Menu options. Send an empty array for a menu with no options."},
+		"name":                map[string]interface{}{"type": "string", "minLength": 1, "maxLength": 80},
+		"description":         map[string]interface{}{"type": "string", "maxLength": 150},
+		"announcement":        map[string]interface{}{"type": "integer", "minimum": 0, "description": "Recording id used as the greeting."},
+		"timeout_seconds":     map[string]interface{}{"type": "integer", "minimum": 1, "maximum": 300, "description": "Seconds to wait for a key. Defaults to 10."},
+		"timeout_destination": failoverProperty,
+		"invalid_destination": failoverProperty,
+		"entries":             map[string]interface{}{"type": "array", "maxItems": 10, "items": ivrEntry, "description": "Menu options. Send an empty array for a menu with no options."},
 	}
 	ivrUpdateProps := map[string]interface{}{"type": "object", "additionalProperties": false, "minProperties": 1, "properties": map[string]interface{}{
 		"name":                ivrProps["name"],

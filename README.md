@@ -53,3 +53,11 @@ Para consultar errores y actividad del proveedor desde el servidor con
 `journalctl`, ver [Diagnóstico de proveedores compatibles con OpenAI](packaging/README.md#diagnóstico-de-proveedores-compatibles-con-openai).
 Incluye seguimiento en vivo, búsqueda por `diagnostic_id` e interpretación de
 estados HTTP, tiempos de espera y respuestas vacías.
+
+## Codecs predeterminados de extensiones
+
+Al crear extensiones con valores predeterminados, `pjsip_webrtc` utiliza sólo
+`opus`; `sip` y `pjsip` utilizan `ulaw` y `alaw`. La herramienta comunica estos
+valores al modelo y la API de PBX los aplica si se omite `codecs` (requiere la
+actualización correspondiente de `issabel-framework`). En actualizaciones,
+omitir `codecs` conserva los valores existentes.
