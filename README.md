@@ -46,3 +46,10 @@ enmascarada de la clave. Las configuraciones anteriores no necesitan migración.
 
 Referencias: [OpenRouter Quickstart](https://openrouter.ai/docs/quickstart) y
 [soporte de herramientas](https://openrouter.ai/docs/guides/features/tool-calling).
+
+## Diagnóstico del proveedor
+
+Para consultar errores y actividad del proveedor desde el servidor con
+`journalctl`, ver [Diagnóstico de proveedores compatibles con OpenAI](packaging/README.md#diagnóstico-de-proveedores-compatibles-con-openai).
+Incluye seguimiento en vivo, búsqueda por `diagnostic_id` e interpretación de
+estados HTTP, tiempos de espera y respuestas vacías.

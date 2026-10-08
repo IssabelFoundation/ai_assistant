@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -112,7 +114,7 @@ func TestCompatibleModelsAndProbe(t *testing.T) {
 		if req.URL.Path == "/api/v1/chat/completions" {
 			var input map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&input)
-			if input["tools"] != nil || input["model"] != "vendor/model" || strings.Contains(mustJSON(input), "PBX") {
+			if input["max_tokens"] != float64(2048) || input["tools"] != nil || input["model"] != "vendor/model" || strings.Contains(mustJSON(input), "PBX") {
 				t.Fatal(input)
 			}
 			body = `{"choices":[{"message":{"role":"assistant","content":"OK"}}]}`
@@ -208,5 +210,34 @@ func TestCompatibleProviderHandlers(t *testing.T) {
 	a.modelCache["alice:new"] = cachedModels{}
 	if w := call(a.provider, "DELETE", ""); w.Code != 204 || len(a.modelCache) != 0 {
 		t.Fatal(w.Code)
+	}
+}
+
+func TestCompatibleDiagnostics(t *testing.T) {
+	var logs bytes.Buffer
+	original := log.Writer()
+	log.SetOutput(&logs)
+	defer log.SetOutput(original)
+	for _, tc := range []struct{ body, outcome, message string }{
+		{`{"choices":[{"finish_reason":"length","message":{"role":"assistant","content":""}}],"usage":{"completion_tokens":16,"completion_tokens_details":{"reasoning_tokens":16}}}`, "empty_output", "exhausted its token budget"},
+		{`{"choices":[],"error":{"message":"secret-key private-conversation"}}`, "upstream_error", "inside a successful HTTP response"},
+		{`{"choices":[]}`, "no_choices", "no choices"},
+		{`{"choices":[{"finish_reason":"secret-key private-conversation","message":{"role":"assistant","content":""}}]}`, "empty_output", "finish_reason=unknown"},
+	} {
+		logs.Reset()
+		p, _ := newCompatibleProvider("https://example.org", jsonClient(tc.body))
+		err := p.Test(context.Background(), "secret-key", "private-model")
+		if err == nil || !strings.Contains(err.Error(), tc.message) || !strings.Contains(err.Error(), "diagnostic_id=") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		id := strings.TrimSuffix(strings.Split(err.Error(), "diagnostic_id=")[1], ")")
+		if !strings.Contains(logs.String(), "id="+id) || !strings.Contains(logs.String(), "outcome="+tc.outcome) || !strings.Contains(logs.String(), "operation=connection_test") {
+			t.Fatal(logs.String())
+		}
+		for _, secret := range []string{"secret-key", "private-conversation", "private-model"} {
+			if strings.Contains(logs.String()+err.Error(), secret) {
+				t.Fatal("diagnostics leaked sensitive content")
+			}
+		}
 	}
 }

@@ -2,7 +2,7 @@
 
 Name:           issabel-mcp
 Version:        0.1.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Restricted MCP and BYOK service for Issabel
 License:        GPLv3+
 URL:            https://www.issabel.org
@@ -81,6 +81,9 @@ chmod 0644 /etc/issabel-mcp/public.pem
 %dir %attr(0700,issabel-mcp,issabel-ai) %{_localstatedir}/lib/issabel-mcp
 
 %changelog
+* Thu Oct 08 2026 Issabel Foundation <security@issabel.org> - 0.1.0-3
+- Add safe provider diagnostics and increase connection-test token budget
+
 * Wed Sep 30 2026 Issabel Foundation <security@issabel.org> - 0.1.0-12
 - Persist plan outcome events and associate them with their conversations
 

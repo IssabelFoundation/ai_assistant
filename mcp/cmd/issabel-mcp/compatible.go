@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 )
 
 func normalizeBaseURL(value string) (string, error) {
@@ -42,15 +45,50 @@ func newCompatibleProvider(baseURL string, client *http.Client) (*compatibleProv
 	return &compatibleProvider{client: &copyClient, baseURL: baseURL}, nil
 }
 
-func (p *compatibleProvider) request(req *http.Request, key string, out interface{}) error {
+// Only locally generated IDs, fixed categories and numeric metadata reach logs.
+// Never log endpoints, upstream errors, prompts, response text or credentials.
+type providerDiagnostic struct {
+	ID               string
+	Operation        string
+	Started          time.Time
+	HTTP             int
+	Outcome          string
+	Finish           string
+	Choices          int
+	PromptTokens     int
+	CompletionTokens int
+	ReasoningTokens  int
+}
+
+func newProviderDiagnostic(operation string) *providerDiagnostic {
+	return &providerDiagnostic{ID: randomHex(8), Operation: operation, Started: time.Now(), Outcome: "ok"}
+}
+func (d *providerDiagnostic) finish(err *error) {
+	if *err != nil {
+		if d.Outcome == "ok" {
+			d.Outcome = "invalid_response"
+		}
+		*err = fmt.Errorf("%w (diagnostic_id=%s)", *err, d.ID)
+	}
+	log.Printf("provider_diagnostic id=%s provider=openai_compatible operation=%s outcome=%s http_status=%d duration_ms=%d finish_reason=%q choices=%d prompt_tokens=%d completion_tokens=%d reasoning_tokens=%d", d.ID, d.Operation, d.Outcome, d.HTTP, time.Since(d.Started).Milliseconds(), d.Finish, d.Choices, d.PromptTokens, d.CompletionTokens, d.ReasoningTokens)
+}
+
+func (p *compatibleProvider) request(req *http.Request, key string, out interface{}, diagnostic *providerDiagnostic) error {
 	req.Header.Set("Authorization", "Bearer "+key)
 	// Do not expose upstream bodies or transport errors: either may echo secrets.
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return errors.New("compatible provider request failed (connection or timeout)")
+		diagnostic.Outcome = "connection_error"
+		var networkError net.Error
+		if errors.As(err, &networkError) && networkError.Timeout() {
+			diagnostic.Outcome = "timeout"
+		}
+		return fmt.Errorf("compatible provider request failed: %s", diagnostic.Outcome)
 	}
 	defer resp.Body.Close()
+	diagnostic.HTTP = resp.StatusCode
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		diagnostic.Outcome = "http_error"
 		return fmt.Errorf("compatible provider HTTP %d", resp.StatusCode)
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(nil, resp.Body, 2<<20)).Decode(out); err != nil {
@@ -59,7 +97,9 @@ func (p *compatibleProvider) request(req *http.Request, key string, out interfac
 	return nil
 }
 
-func (p *compatibleProvider) Models(ctx context.Context, key string) ([]string, error) {
+func (p *compatibleProvider) Models(ctx context.Context, key string) (_ []string, err error) {
+	diagnostic := newProviderDiagnostic("models")
+	defer diagnostic.finish(&err)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.baseURL+"/models", nil)
 	if err != nil {
 		return nil, errors.New("invalid provider URL")
@@ -69,7 +109,7 @@ func (p *compatibleProvider) Models(ctx context.Context, key string) ([]string, 
 			ID string `json:"id"`
 		} `json:"data"`
 	}
-	if err := p.request(req, key, &out); err != nil {
+	if err := p.request(req, key, &out, diagnostic); err != nil {
 		return nil, err
 	}
 	models := []string{}
@@ -82,21 +122,50 @@ func (p *compatibleProvider) Models(ctx context.Context, key string) ([]string, 
 	return models, nil
 }
 
-func (p *compatibleProvider) complete(ctx context.Context, key string, body map[string]interface{}) (providerReply, json.RawMessage, error) {
+func (p *compatibleProvider) complete(ctx context.Context, key string, body map[string]interface{}) (_ providerReply, _ json.RawMessage, err error) {
+	operation := "chat"
+	if _, ok := body["max_tokens"]; ok {
+		operation = "connection_test"
+	}
+	diagnostic := newProviderDiagnostic(operation)
+	defer diagnostic.finish(&err)
 	req, err := jsonRequest(ctx, http.MethodPost, p.baseURL+"/chat/completions", body)
 	if err != nil {
 		return providerReply{}, nil, errors.New("invalid provider request")
 	}
 	var out struct {
+		Error json.RawMessage `json:"error"`
+		Usage struct {
+			Prompt     int `json:"prompt_tokens"`
+			Completion int `json:"completion_tokens"`
+			Details    struct {
+				Reasoning int `json:"reasoning_tokens"`
+			} `json:"completion_tokens_details"`
+		} `json:"usage"`
 		Choices []struct {
+			Finish  string          `json:"finish_reason"`
 			Message json.RawMessage `json:"message"`
 		} `json:"choices"`
 	}
-	if err := p.request(req, key, &out); err != nil {
+	if err := p.request(req, key, &out, diagnostic); err != nil {
 		return providerReply{}, nil, err
 	}
+	diagnostic.Choices = len(out.Choices)
+	diagnostic.PromptTokens = out.Usage.Prompt
+	diagnostic.CompletionTokens = out.Usage.Completion
+	diagnostic.ReasoningTokens = out.Usage.Details.Reasoning
+	if len(out.Error) > 0 && string(out.Error) != "null" {
+		diagnostic.Outcome = "upstream_error"
+		return providerReply{}, nil, errors.New("compatible provider reported an error inside a successful HTTP response")
+	}
 	if len(out.Choices) == 0 {
-		return providerReply{}, nil, errors.New("compatible provider returned no output")
+		diagnostic.Outcome = "no_choices"
+		return providerReply{}, nil, errors.New("compatible provider returned no choices")
+	}
+	diagnostic.Finish = "unknown"
+	switch out.Choices[0].Finish {
+	case "stop", "length", "tool_calls", "content_filter", "error":
+		diagnostic.Finish = out.Choices[0].Finish
 	}
 	raw := out.Choices[0].Message
 	var msg struct {
@@ -125,7 +194,11 @@ func (p *compatibleProvider) complete(ctx context.Context, key string, body map[
 		reply.Calls = append(reply.Calls, normalizedCall{ID: call.ID, Name: call.Function.Name, Arguments: args})
 	}
 	if strings.TrimSpace(reply.Text) == "" && len(reply.Calls) == 0 {
-		return providerReply{}, nil, errors.New("compatible provider returned no output")
+		diagnostic.Outcome = "empty_output"
+		if diagnostic.Finish == "length" {
+			return providerReply{}, nil, errors.New("compatible provider exhausted its token budget before returning text or tools")
+		}
+		return providerReply{}, nil, fmt.Errorf("compatible provider returned no output (finish_reason=%s)", diagnostic.Finish)
 	}
 	return reply, raw, nil
 }
@@ -158,7 +231,7 @@ func (p *compatibleProvider) Reply(ctx context.Context, key, model string, messa
 }
 
 func (p *compatibleProvider) Test(ctx context.Context, key, model string) error {
-	reply, _, err := p.complete(ctx, key, map[string]interface{}{"model": model, "messages": []map[string]string{{"role": "user", "content": "Reply with OK."}}, "stream": false, "max_tokens": 16})
+	reply, _, err := p.complete(ctx, key, map[string]interface{}{"model": model, "messages": []map[string]string{{"role": "user", "content": "Reply with OK."}}, "stream": false, "max_tokens": 2048})
 	if err == nil && len(reply.Calls) > 0 {
 		return errors.New("compatible provider returned unexpected tools during connection test")
 	}

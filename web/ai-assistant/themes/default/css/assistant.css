@@ -104,3 +104,12 @@
 .issabel-ai .ai-dialog .ai-dialog-status { margin: 8px 0; color: var(--ai-muted); }
 .issabel-ai .ai-dialog .ai-actions { justify-content: flex-end; }
 .issabel-ai .ai-dialog button:focus-visible { outline: 2px solid var(--ai-purple-deep); outline-offset: 3px; }
+
+/* Waiting feedback, with a static alternative for reduced-motion preferences. */
+.issabel-ai .ai-working { color: var(--ai-purple-deep); font-weight: 600; }
+.issabel-ai .ai-dots { display: inline-flex; gap: 4px; margin-left: 9px; vertical-align: middle; }
+.issabel-ai .ai-dots span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: ai-dot-bounce 1s ease-in-out infinite; }
+.issabel-ai .ai-dots span:nth-child(2) { animation-delay: .15s; }
+.issabel-ai .ai-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes ai-dot-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .issabel-ai .ai-dots span { animation: none; opacity: .7; } }

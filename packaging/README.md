@@ -231,3 +231,39 @@ no cambia la respuesta de ejecución ni impide descargar el CSV. No se guardan
 credenciales ni cuerpos de respuesta de ejecución en el historial.
 Las ejecuciones anteriores a esta actualización no se reconstruyen automáticamente;
 su registro sigue disponible en la auditoría del plan.
+
+### Diagnóstico de proveedores compatibles con OpenAI
+
+Para OpenRouter y otros proveedores genéricos, cada solicitud de listado,
+prueba de conexión o inferencia registra un evento `provider_diagnostic` en el
+journal de `issabel-mcp`. Un error mostrado en la interfaz incluye
+`diagnostic_id=...`; se puede buscar directamente, sin scripts ni copiar claves:
+
+```sh
+journalctl -u issabel-mcp --since '15 minutes ago' --no-pager | grep provider_diagnostic
+# Reemplazar ID_DEL_ERROR por el diagnostic_id mostrado en la interfaz:
+journalctl -u issabel-mcp --since '1 hour ago' --no-pager | grep -F 'id=ID_DEL_ERROR'
+# Observar mientras se pulsa Probar conexión o se envía un mensaje:
+journalctl -u issabel-mcp -f
+```
+
+Los eventos contienen operación (`models`, `connection_test` o `chat`), estado
+HTTP, duración en milisegundos, cantidad de alternativas, motivo de finalización
+y tokens reportados por el proveedor. Contadores en cero también pueden indicar
+metadatos ausentes. El ID es local: no es un identificador de OpenRouter.
+No se registran claves, URL del proveedor, prompts, respuestas ni razonamiento.
+
+- `outcome=timeout`: la solicitud excedió el tiempo de espera; revisar conectividad
+  y latencia. El timeout se configura con `ISSABEL_MCP_HTTP_TIMEOUT_SECONDS`.
+- `outcome=connection_error`: revisar DNS, TLS y acceso de red desde la PBX.
+- `outcome=http_error`: 401/403 indican problemas de autenticación o acceso;
+  429 indica límite/capacidad; 5xx indica un fallo del servicio remoto.
+- `outcome=upstream_error`: el cuerpo informó un error aunque HTTP fuera exitoso.
+- `outcome=no_choices`: el proveedor no entregó ninguna alternativa.
+- `outcome=empty_output finish_reason="length"`: se agotó el presupuesto de tokens
+  antes de producir texto o herramientas, posiblemente durante el razonamiento.
+- `outcome=invalid_response`: JSON, mensaje o llamada a herramienta inválidos.
+
+La prueba de conexión usa el modelo guardado y hasta 2048 tokens, incluyendo el
+razonamiento, para reducir falsos fallos por presupuestos demasiado pequeños.
+No realiza reintentos automáticos. El chat no impone ese límite de prueba.

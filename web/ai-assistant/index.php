@@ -341,7 +341,23 @@ if(isset($_GET['api'])) {
     ai_set_status($response[0]); echo $response[2]; die();
 }
 
+// The framework discovers module assets using stable URLs. Fingerprint them here
+// so an RPM upgrade cannot mix new markup with a cached older script or stylesheet.
+function ai_version_module_assets(&$smarty, $module_name) {
+    $headers = $smarty->getTemplateVars('HEADER_MODULES');
+    if(!is_string($headers)) { return; }
+    foreach(array('js/assistant.js', 'css/assistant.css') as $asset) {
+        $relative = 'themes/default/'.$asset;
+        $version = hash_file('sha256', dirname(__FILE__).'/'.$relative);
+        if($version === false) { continue; }
+        $url = 'modules/'.$module_name.'/'.$relative;
+        $headers = str_replace(array($url."'", $url.'"'), array($url.'?v='.$version."'", $url.'?v='.$version.'"'), $headers);
+    }
+    $smarty->assign('HEADER_MODULES', $headers);
+}
+
 function _moduleContent(&$smarty, $module_name) {
+    ai_version_module_assets($smarty, $module_name);
     global $aiLanguage, $aiTranslations;
     $title = htmlspecialchars(ai_t($aiTranslations,'assistant_title','Asistente IA'),ENT_QUOTES,'UTF-8');
     $pending = htmlspecialchars(ai_t($aiTranslations,'pending_plans','Planes pendientes'),ENT_QUOTES,'UTF-8');
@@ -357,12 +373,12 @@ function _moduleContent(&$smarty, $module_name) {
     <section id="settings" class="ai-panel ai-hidden">
         <h2>Configuración BYOK</h2>
         <div class="ai-grid"><label>Proveedor<select id="provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="gemini">Gemini</option><option value="openai_compatible">Compatible con OpenAI</option></select></label><label id="baseURLField" class="ai-hidden">URL base<input id="baseURL" type="url" placeholder="https://openrouter.ai/api/v1" autocomplete="off"><small>Base de la API, sin /chat/completions.</small></label><label>Modelo<input id="model" list="modelOptions" autocomplete="off" placeholder="Seleccione o escriba un modelo"><datalist id="modelOptions"></datalist></label><label>API key<input id="apiKey" type="password" autocomplete="new-password" placeholder="Sólo se usa al guardar"></label></div>
-        <div class="ai-actions"><button type="button" id="saveProvider">Guardar</button><button type="button" id="testProvider" class="ai-secondary">Probar conexión</button><button type="button" id="deleteProvider" class="ai-danger">Borrar clave</button></div><p id="providerTestNotice" class="ai-hidden">Probar conexión usa el modelo guardado y puede consumir tokens. Elegí un modelo con soporte de herramientas.</p><p id="providerStatus"></p><p id="modelStatus"></p>
+        <div class="ai-actions"><button type="button" id="saveProvider">Guardar</button><button type="button" id="testProvider" class="ai-secondary">Probar conexión</button><button type="button" id="deleteProvider" class="ai-danger">Borrar clave</button></div><p id="providerTestNotice" class="ai-hidden">Probar conexión usa el modelo guardado y puede consumir tokens. Elegí un modelo con soporte de herramientas.</p><p id="providerStatus" role="status" aria-live="polite"></p><p id="modelStatus"></p>
     </section>
     <section id="messages" class="ai-messages" aria-live="polite"><article class="assistant">Hola. Puedo consultar extensiones, colas, grupos de timbrado, horarios y destinos, verificar si un número está libre, y preparar planes con aprobación humana para extensiones SIP, PJSIP y PJSIP WebRTC, colas, grupos de timbrado y condiciones horarias. Cada cambio requerirá tu aprobación aquí.</article></section>
     <section id="plans"></section>
     <form id="chatForm" class="ai-chat-form"><textarea id="message" maxlength="12000" required placeholder="Ej.: crea 10 extensiones PJSIP desde la 100, sin voicemail"></textarea><button type="submit">Enviar</button></form>
-    <footer class="ai-footer"><button type="button" id="historyButton" class="ai-link"><?php echo $history; ?></button><span id="activity"></span></footer>
+    <footer class="ai-footer"><button type="button" id="historyButton" class="ai-link"><?php echo $history; ?></button><span id="activity" role="status" aria-live="polite"></span></footer>
     <section id="history" class="ai-panel ai-hidden"><h2>Conversaciones</h2><div id="historyList"></div></section>
 </main>
 <?php

@@ -1,6 +1,6 @@
 Name:           issabel-ai-assistant
 Version:        0.1.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Issabel web interface for the AI assistant
 License:        GPLv3+
 URL:            https://www.issabel.org
@@ -50,6 +50,9 @@ if [ $1 -eq 0 ] && command -v issabel-menuremove >/dev/null 2>&1; then issabel-m
 /usr/share/issabel/module_installer/%{name}-%{version}-%{release}/menu.xml
 
 %changelog
+* Thu Oct 08 2026 Issabel Foundation <security@issabel.org> - 0.1.0-3
+- Animate waiting states and fingerprint assets to refresh browser caches
+
 * Wed Sep 30 2026 Issabel Foundation <security@issabel.org> - 0.1.0-16
 - Replace browser dialogs with accessible styled modals and scrollable audit output
 
